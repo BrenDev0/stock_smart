@@ -1,60 +1,49 @@
 import yfinance as yf
 import pandas as pd
+import numpy as np
 
 
 def trend_signals(ticker: yf.Ticker):
-    price_history = ticker.history(period='5y')
-    closing_prices = price_history["Close"]
-    
-
-    sma_20 = closing_prices.roling(20).mean()
-    sma_50 = closing_prices.rolling(50).mean()
-    sma_200 = closing_prices.rolling(200).mean()
-
-    short_term_trend = sma_20 > sma_50
-    long_term_trend = sma_50 > sma_200
+    pass
 
 
-def get_adx(df: pd.DataFrame, length: int = 14):
+def adx(df: pd.DataFrame, length: int = 14):
         high = df["High"]
         low = df["Low"]
         close = df["Close"]
 
-        
         df["high_low"] = abs(high - low)
         df["high_close"] = abs(high - close.shift(1))
         df["low_close"] = abs(low - close.shift(1))
         df["true_range"] = df[["high_low", "high_close", "low_close"]].max(axis=1)
 
-        df["plus_move"] = high - high.shift(1)
-        df["minus_move"] = low.shift(1) - low 
+        df["up_move"] = high - high.shift(1)
+        df["down_move"] = low.shift(1) - low
+
+        df["+dm"] = np.where((df["up_move"] > df["down_move"]) & (df["up_move"] > 0), df["up_move"], 0)
+        df["-dm"] = np.where((df["down_move"] > df["up_move"]) & (df["down_move"] > 0), df["down_move"], 0)
+
+        df["+di"] = 100 * (df["+dm"].ewm(span=length).mean() / df["true_range"].ewm(span=length).mean())
+        df["-di"] = 100 * (df["-dm"].ewm(span=length).mean() / df["true_range"].ewm(span=length).mean())
+        df["dx"] = 100 * abs(df["+di"] - df["-di"]) / (df["+di"] + df["-di"])
+        df["adx"] = df["dx"].ewm(span=length).mean()
+
+        return df[["adx", "+di", "-di"]]
+
+        
 
 
-
-
-
-
-def mean_reversion(ticker: yf.Ticker):
-    price_history = ticker.history(period='1y')
-    closing_prices = price_history["Close"]
-
-    window = closing_prices.tail(50)
-    sma = window.sum() / len(window)
+def mean_reversion(df: pd.DataFrame, sma_length: int = 50):
+    df = df.rename(columns={"Close": "close"})
+    df["sma"] = df["close"].rolling(window=sma_length).mean()
+    
+    df["deviation"] = df["close"] - df["sma"]
+    df["std_deviation"] = df["deviation"].rolling(window=sma_length).std()
     
 
-    std = window.std()
-    deviation = window.iloc[-1] - sma
+    df["z_score"] = df["deviation"] / df["std_deviation"]
 
-    z_score = deviation / std
-
-    return {
-        "price": str(window.iloc[-1]),
-        "z_score": str(z_score),
-        "upper_band": str(sma + std * 2),
-        "lower_band": str(sma - std * 2),
-        "standard_deviation": str(std),
-        "deviation": str(deviation)
-    }
+    return df[["sma", "std_deviation", "deviation", "z_score", "close"]]
     
 
 
