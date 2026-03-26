@@ -1,6 +1,6 @@
 import pandas as pd
 import optuna
-from stocksmart.tenchinal_analysis import mean_reversion
+from stocksmart.stategies import mean_reversion
 from stocksmart.models import Trade
 from .utils import (
     calculate_days_held, 

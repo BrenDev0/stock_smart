@@ -1,7 +1,7 @@
 import pandas as pd
 import optuna
 from stocksmart.models import Trade
-from ..tenchinal_analysis import adx
+from ..stategies import adx
 from .utils import (
     calculate_days_held, 
     calculate_long_position_pl, 
