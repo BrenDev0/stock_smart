@@ -83,8 +83,8 @@ def back_test_mean_reversion(price_history: pd.DataFrame, z_score_entry: int, z_
     return {
         "sma_length": sma_length,
         "z_score_thresholds": f"entry: +/-{z_score_entry}, exit: +/-{z_score_exit}",
-        "win_stats": f"{len(wins)}, total: {sum(wins)}, average_win: {get_average_pl_pct(wins)}",
-        "loss_stats": f"{len(losses)}, total: {sum(losses)}, average_loss: {get_average_pl_pct(losses)}",
+        "win_stats": f"total_wins: {len(wins)}, average_win: {get_average_pl_pct(wins)*100:.2f}%",
+        "loss_stats": f"total_losses: {len(losses)}, average_loss: {get_average_pl_pct(losses)*100:.2f}%",
         "pl": sum([trade.pl_pct for trade in trades]),
         "average_days_held": get_average_days_held(trades)
     }

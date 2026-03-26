@@ -24,6 +24,7 @@ def gather_losses(trades: List[Trade]) -> List[float | None]:
 def get_average_pl_pct(trades: List[float]) -> float:
     return sum(trades) / len(trades)
 
-def get_average_days_held(trades: list[Trade]) -> float:
-    return sum([trade.days_held for trade in trades]) /len(trades)
+def get_average_days_held(trades: list[Trade]) -> int:
+    average = sum([trade.days_held for trade in trades]) /len(trades)
+    return int(average)
 

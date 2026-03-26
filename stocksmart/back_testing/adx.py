@@ -84,8 +84,8 @@ def back_test_adx(price_history: pd.DataFrame, adx_entry: int, adx_exit: int):
 
     return {
         "adx_thresholds": f"entry: {adx_entry}, exit: {adx_exit}",
-        "wins_stats": f"{len(wins)} wins, total: {sum(wins)*100:.2f}%, average win: {get_average_pl_pct(wins)}",
-        "loss_stats": f"{len(losses)} losses, total: {sum(losses)*100:.2f}, average loss: {get_average_pl_pct(losses)}",
+        "wins_stats": f"total_wins: {len(wins)}, average win: {get_average_pl_pct(wins)*100:.2f}%",
+        "loss_stats": f"total_losses: {len(losses)}, average loss: {get_average_pl_pct(losses)*100:.2f}%",
         "trades": len(trades),
         "pl": sum([trade.pl_pct for trade in trades]),
         "average_days_held": str(get_average_days_held(trades))
