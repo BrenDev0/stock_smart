@@ -2,12 +2,8 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from typing import List
 from statsmodels.tsa.stattools import coint
-
-
-
-def trend_signals(ticker: yf.Ticker):
-    pass
 
 
 def adx(df: pd.DataFrame, length: int = 14):
@@ -32,8 +28,6 @@ def adx(df: pd.DataFrame, length: int = 14):
     df["adx"] = df["dx"].ewm(span=length).mean()
 
     return df[["adx", "+di", "-di"]]
-
-        
 
 
 def mean_reversion(df: pd.DataFrame, sma_length: int = 50):
@@ -118,6 +112,43 @@ def pair_trade(ticker_a: str, ticker_b: str, window: int):
         "rolling_std_dev": round(latest_std, 4),
         "latest_z_score": round(latest_score, 4),
         "signal": signal
+    }
+
+
+def cross_sectional_mean_reversion(tickers: List[str], window: int):
+    df = pd.DataFrame()
+
+    for ticker in tickers:
+        df[ticker] =  yf.Ticker(ticker).history(period="5y", auto_adjust=True)["Close"]
+    
+    df = df.dropna()
+
+    returns = df.pct_change(window)
+
+    latest_returns = returns.iloc[-1]
+
+    signal = latest_returns - latest_returns.mean()
+
+    longs = signal.nsmallest(3).index
+    shorts = signal.nlargest(3).index
+
+    vol = df.pct_change().rolling(30).std().iloc[-1]
+    
+    weights = {}
+
+    for t in longs:
+        weights[t] = 1 / vol[t] 
+
+    for t in shorts:
+        weights[t] = -1 / vol[t]
+
+    total = sum(abs(w) for w in weights.values())
+    weights = {k: v / total for k, v in weights.items()}
+
+    return {
+        "longs": list(longs),
+        "shorts": list(shorts),
+        "weights": weights
     }
     
     
