@@ -1,6 +1,9 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+import statsmodels.api as sm
+from statsmodels.tsa.stattools import coint
+
 
 
 def trend_signals(ticker: yf.Ticker):
@@ -45,6 +48,81 @@ def mean_reversion(df: pd.DataFrame, sma_length: int = 50):
 
     return df[["sma", "std_deviation", "deviation", "z_score", "close"]]
     
+
+def pair_trade(ticker_a: str, ticker_b: str, window: int):
+    price_history_a = yf.Ticker(ticker_a).history(period="5y", auto_adjust=True)
+    price_history_b = yf.Ticker(ticker_b).history(period="5y", auto_adjust=True)
+
+    df = pd.DataFrame({
+        ticker_a: price_history_a["Close"],
+        ticker_b: price_history_b["Close"]
+    }).dropna()
+
+    if len(df) < window + 1:
+        return f"Not enough overlapping data for {ticker_a}, {ticker_b} with window={window}"
+    
+    returns = df.pct_change().dropna()
+    
+    correlation = returns[ticker_a].corr(returns[ticker_b])
+    if pd.isna(correlation) or correlation < 0.7:
+        return f"Insufficient correlation for {ticker_a}, {ticker_b}: {correlation}"
+        
+
+    score, pvalue, _ = coint(df[ticker_a], df[ticker_b])
+    if pd.isna(pvalue) or pvalue > 0.05:
+        return f"Cointegration failed for {ticker_a}, {ticker_b}: p-value={pvalue}"
+
+    y = df[ticker_a]
+    x = df[ticker_b]
+
+    X = sm.add_constant(x)
+
+    model = sm.OLS(y, X).fit()
+    beta = model.params[ticker_b]
+    alpha = model.params["const"]
+
+    spread = y - (alpha + beta * x)
+
+    rolling_mean = spread.rolling(window).mean()
+
+    rolling_std_dev = spread.rolling(window).std(ddof=1)
+    
+    z_score = (spread - rolling_mean) / rolling_std_dev
+    z_score = z_score.dropna()
+    if z_score.empty:
+        return f"Could not compute z-score for {ticker_a}, {ticker_b}"
+    
+
+    latest_score = z_score.iloc[-1]
+    latest_spread = spread.iloc[-1]
+    latest_mean = rolling_mean.iloc[-1]
+    latest_std = rolling_std_dev.iloc[-1]
+
+    signal = "neutral"
+
+    if latest_score > 2:
+        signal = "short spread"
+    elif latest_score < -2:
+        signal = "long spread"
+
+   
+    return {
+        "ticker_a": ticker_a,
+        "ticker_b": ticker_b,
+        "correlation": str(round(correlation, 2)),
+        "cointegration_pvalue": str(round(pvalue, 4)),
+        "hedge_ratio": str(round(beta, 4)),
+        "intercept": str(round(alpha, 4)),
+        "latest_spread": str(round(latest_spread, 4)),
+        "rolling_mean": str(round(latest_mean, 4)),
+        "rolling_std_dev": str(round(latest_std, 4)),
+        "latest_z_score": str(round(latest_score, 4)),
+        "signal": signal
+    }
+    
+    
+    
+
 
 
     

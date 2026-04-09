@@ -1,23 +1,29 @@
-from stocksmart.back_testing.mean_reversion import optimize_mean_reversion_params, back_test_mean_reversion
-import yfinance as yf
+import asyncio
+import pandas as pd
 import optuna
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+from .stategies import pair_trade
 
-def main():
-    ticker = yf.Ticker("ibm")
-    price_history = ticker.history(period="5y")
+async def main():
+    portfolios = ["xlb", "xlc", "xle",  "xlf", "xlg", "xli", "xlk", "xlp", "xlre", "xlu", "xlv", "xly", "spy", "dia", "qqq", "iwm", "gld", "slv"] 
+    tasks = []
 
-    study = optimize_mean_reversion_params(df=price_history, n_trials=100)
-    best_params = study.best_params
+    for i in portfolios:
+        ticker = i
+        for k in portfolios:
+            if k == ticker:
+                continue
 
-    result = back_test_mean_reversion(
-        price_history=price_history, 
-        z_score_entry=best_params["z_score_entry"],
-        z_score_exit=best_params["z_score_exit"],
-        sma_length=best_params["sma_length"]
-    )
+            tasks.append(asyncio.to_thread(pair_trade, ticker, k, 90)) 
 
-    print(result)
+    results = await asyncio.gather(*tasks)
+    trades = [
+        i for i in results if isinstance(i, dict)
+    ]
+    
+    df = pd.DataFrame(trades)
+    print(df)
+
 
 if __name__  == "__main__":
-    main()
+    asyncio.run(main())
