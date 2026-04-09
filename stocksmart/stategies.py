@@ -109,14 +109,14 @@ def pair_trade(ticker_a: str, ticker_b: str, window: int):
     return {
         "ticker_a": ticker_a,
         "ticker_b": ticker_b,
-        "correlation": str(round(correlation, 2)),
-        "cointegration_pvalue": str(round(pvalue, 4)),
-        "hedge_ratio": str(round(beta, 4)),
-        "intercept": str(round(alpha, 4)),
-        "latest_spread": str(round(latest_spread, 4)),
-        "rolling_mean": str(round(latest_mean, 4)),
-        "rolling_std_dev": str(round(latest_std, 4)),
-        "latest_z_score": str(round(latest_score, 4)),
+        "correlation": round(correlation, 2),
+        "cointegration_pvalue": round(pvalue, 4),
+        "hedge_ratio": round(beta, 4),
+        "intercept": round(alpha, 4),
+        "latest_spread": round(latest_spread, 4),
+        "rolling_mean": round(latest_mean, 4),
+        "rolling_std_dev": round(latest_std, 4),
+        "latest_z_score": round(latest_score, 4),
         "signal": signal
     }
     
